@@ -99,9 +99,10 @@ class AutoTunerBase(tune.Trainable):
         not_found = 'N/A' in metrics.values()
         if error or not_found:
             return (99999999999) * (self.step_ / 100)**(-1)
-        gamma = (metrics['clk_period'] - metrics['worst_slack']) / 10
-        score = metrics['clk_period'] - metrics['worst_slack']
-        score = score * (self.step_ / 100)**(-1) + gamma * metrics['num_drc']
+        score = 50 - metrics['num_drc']
+        if score < 0:
+            score = score * -1
+        score = score * (self.step_ / 100)**(-1)
         return score
 
     @classmethod
@@ -118,6 +119,7 @@ class AutoTunerBase(tune.Trainable):
         total_power = 'ERR'
         core_util = 'ERR'
         final_util = 'ERR'
+        drt_runtime = 'ERR'
         for stage, value in data.items():
             if stage == 'constraints' and len(value['clocks__details']) > 0:
                 clk_period = float(value['clocks__details'][0].split()[1])
@@ -128,6 +130,8 @@ class AutoTunerBase(tune.Trainable):
                 num_drc = value['route__drc_errors']
             if stage == 'detailedroute' and 'route__wirelength' in value:
                 wirelength = value['route__wirelength']
+            if stage == 'detailedroute' and 'route__runtime' in value:
+                drt_runtime = value['route__runtime']
             if stage == 'finish' and 'timing__setup__ws' in value:
                 worst_slack = value['timing__setup__ws']
             if stage == 'finish' and 'power__total' in value:
@@ -139,6 +143,7 @@ class AutoTunerBase(tune.Trainable):
             "worst_slack": worst_slack,
             "wirelength": wirelength,
             "num_drc": num_drc,
+            "drt_runtime": drt_runtime,
             "total_power": total_power,
             "core_util": core_util,
             "final_util": final_util
