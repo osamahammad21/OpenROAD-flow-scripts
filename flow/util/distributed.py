@@ -97,7 +97,7 @@ class AutoTunerBase(tune.Trainable):
         '''
         error = 'ERR' in metrics.values()
         not_found = 'N/A' in metrics.values()
-        if error or not_found:
+        if metrics['num_drc'] is 'ERR':
             return (99999999999) * (self.step_ / 100)**(-1)
         score = 50 - metrics['num_drc']
         if score < 0:
